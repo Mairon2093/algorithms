@@ -1,0 +1,524 @@
+#ifdef ONPC
+#define _GLIBCXX_DEBUG
+#define _GLIBCXX_DEBUG_PEDANTIC
+#endif
+
+//#pragma GCC optimize("o3")
+//#pragma GCC optimize("avx2")
+#include <iostream>
+#include <bits/stdc++.h>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+
+using namespace std;
+using namespace __gnu_pbds;
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+template <typename T>
+istream& operator>>(istream& in, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) in >> a[i];
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) out << a[i] << " ";
+    return out;
+}
+template <typename T>
+ostream& operator<<(ostream& out, set <T>& a) {
+    for (const T& x : a) out << x << " ";
+    return out;
+}
+
+using ll = long long;
+using ld = long double;
+using pii = pair <int, int>;
+using pll = pair <ll, ll>;
+using ull = unsigned long long;
+
+template <typename T>
+using vec = vector <T>;
+template <typename T>
+using graph = vec <vec <T>>;
+using namespace __gnu_pbds;
+
+template <class T>
+using ordered_set =
+tree <T, null_type, less <T>, rb_tree_tag, tree_order_statistics_node_update>;
+/*
+template<class T> using ordered_multiset =
+    tree<T, null_type, less_equal<T>, rb_tree_tag, tree_order_statistics_node_update>;*/
+
+const ll LLINF = 1e18 + 5;
+const int INTINF = 1e9 + 5;
+const ll MOD = 1e9 + 7;
+const int logn = 25;
+const int K = 500;
+const int MAXN = 200000;
+
+mt19937 seed(193);
+uniform_int_distribution <int> rnd(-1e9, 1e9);
+
+struct dd_set {
+private:
+    struct node {
+        int prior, val, sum;
+        node* l;
+        node* r;
+        node() {
+            sum = prior = val = 0;
+            l = r = nullptr;
+        }
+        node(int _val) {
+            val = sum = _val;
+            prior = rnd(seed);
+            l = r = 0;
+        }
+    };
+
+    node* root = 0;
+
+    int get_sum(node* v) {
+        if (v == nullptr) return 0;
+        return v->sum;
+    }
+    void update_node(node* v) {
+        if (v == nullptr) return;
+        v->sum = get_sum(v->l) + get_sum(v->r);
+    }
+
+    pair <node*, node*> split(node* v, int val) {
+        if (v == 0) return {0, 0};
+        if (v->val <= val) {
+            pair <node*, node*> res = split(v->r, val);
+            v->r = res.first;
+            update_node(v);
+            return {v, res.second};
+        } else {
+            pair <node*, node*> res = split(v->l, val);
+            v->l = res.second;
+            update_node(v);
+            return {res.first, v};
+        }
+    }
+
+    node* merge(node* L, node* R) {
+        if (L == nullptr) return R;
+        if (R == nullptr) return L;
+
+        if (L->prior < R->prior) {
+            R->l = merge(L, R->l);
+            update_node(R);
+            return R;
+        } else {
+            L->r = merge(L->r, R);
+            update_node(L);
+            return L;
+        }
+    }
+    void print(node* v) {
+        if (!v) return;
+        print(v->l);
+        cout << v->val << " ";
+        print(v->r);
+    }
+
+public:
+    dd_set() {}
+    void print() {
+        print(root);
+    }
+    void add(int val) {
+        node* newnode = new node(val);
+        pair <node*, node*> cut1 = split(root, val);
+        root = merge(merge(cut1.first, newnode), cut1.second);
+    }
+    int final_cut(int l, int r) { // [l, r)
+        pair <node*, node*> cut1 = split(root, r);
+        pair <node*, node*> cut2 = split(cut1.first, l - 1);
+        int ans = get_sum(cut2.second);
+        root = merge(merge(cut2.first, cut2.second), cut1.second);
+        return ans;
+    }
+};
+
+struct dd_ordered_set {
+private:
+    struct node {
+        int sz, val, prior;
+        node* l,* r;
+        node() {
+            l = r = nullptr;
+            sz = 0, val = 0, prior = 0;
+        }
+        node(int _val) {
+            val = _val;
+            sz = 1;
+            l = r = 0;
+            prior = rnd(seed);
+        }
+    };
+
+    map <int, node*> used;
+    node* root = nullptr;
+
+    int get_sz(node* v) {
+        if (!v) return 0;
+        return v->sz;
+    }
+    void update_node(node* v) {
+        if (!v) return;
+        v->sz = 1 + get_sz(v->l) + get_sz(v->r);
+    }
+
+    node* merge(node* L, node* R) {
+        if (L == nullptr) return R;
+        if (R == nullptr) return L;
+
+        if (L->prior <= R->prior) {
+            R->l = merge(L, R->l);
+            update_node(R);
+            return R;
+        } else {
+            L->r = merge(L->r, R);
+            update_node(L);
+            return L;
+        }
+    }
+    pair <node*, node*> split(node* v, int ind) {
+        if (!v) return {0, 0};
+        if (get_sz(v->l) + 1 <= ind) { //
+            pair <node*, node*> c1 = split(v->r, ind - (get_sz(v->l) + 1));
+            v->r = c1.first;
+            update_node(v);
+            return {v, c1.second};
+        } else { // ind < get_sz(v->l)
+            pair <node*, node*> c1 = split(v->l, ind);
+            v->l = c1.second;
+            update_node(v);
+            return {c1.first, v};
+        }
+    }
+    void print(node* v) {
+        if (!v) return;
+        print(v->l);
+        cout << v->val << " ";
+        print(v->r);
+    }
+
+public:
+    dd_ordered_set() {}
+    void print() {
+        print(root);
+    }
+    int findKth(node* v, int ind) {
+        if (!v) return INTINF;
+        if (get_sz(v->l) >= ind) return findKth(v->l, ind);
+        if (get_sz(v->l) + 1 == ind) return v->val;
+        return findKth(v->r, ind - 1 - get_sz(v->l));
+    }
+    void add(int val, int ind) {
+        node* newnode = new node(val);
+        used[val] = newnode;
+        pair <node*, node*> finalcut = split(root, ind);
+        //cout << "add " << get_sz(finalcut.first) << " " << get_sz(finalcut.second) << endl;
+        root = merge(finalcut.first, merge(newnode, finalcut.second)); //
+    }
+    int cut(int l, int r) { // [l, r)
+        pair <node*, node*> cut1 = split(root, r);
+        pair <node*, node*> cut2 = split(cut1.first, l);
+        int ans = get_sz(cut2.second);
+        root = merge(cut2.first, merge(cut2.second, cut1.second));
+        return ans;
+    }
+    node* del(node* v, int val, unordered_map <int, node*>& G) {
+        used[val] = 0;
+        pair <node*, node*> p1 = split(v, val);
+        pair <node*, node*> p2 = split(p1.second, val + 1);
+        return v = merge(p1.first, p2.second);
+    }
+};
+
+struct HLD {
+private:
+    struct segm_for_hld {
+    private:
+        int n, n2;
+        vec <ll> g;
+        vec <ll> p;
+
+        ll merge(ll a, ll b) {
+            return a + b;
+        }
+        void apply(int v, int sz, ll val) {
+            p[v] += val;
+            g[v] += val * sz;
+        }
+        void push(int v, int sz) {
+            if (p[v] == 0) return;
+            apply(2 * v, sz / 2, p[v]);
+            apply(2 * v + 1, sz / 2, p[v]);
+            p[v] = 0;
+        }
+        ll get(int v, int l, int r, int gll, int glr) {
+            if (glr <= l || r <= gll) return 0;
+            if (gll <= l && r <= glr) return g[v];
+            push(v, r - l);
+            int nm = (l + r) >> 1;
+            return merge(get(2 * v, l, nm, gll, glr), get(2 * v + 1, nm, r, gll, glr));
+        }
+        void update(int v, int l, int r, int gll, int glr, ll val) {
+            if (glr <= l || r <= gll) return;
+            if (gll <= l && r <= glr) {
+                apply(v, r - l, val);
+                return;
+            }
+            push(v, r - l);
+            int nm = (l + r) >> 1;
+            update(2 * v, l, nm, gll, glr, val);
+            update(2 * v + 1, nm, r, gll, glr, val);
+            g[v] = merge(g[2 * v], g[2 * v + 1]);
+        }
+
+    public:
+        segm_for_hld() {}
+        segm_for_hld(int _n) {
+            n = _n;
+            n2 = 1 << (int)(ceil(log2(n)) + 1);
+            g = vec <ll>(n2);
+            p = vec <ll>(n2);
+        }
+        ll get(int l, int r) {
+            if (r < l) swap(l, r);
+            return get(1, 0, n2 / 2, l, r + 1);
+        }
+        void update(int l, int r, ll val) {
+            if (r < l) swap(l, r);
+            update(1, 0, n2 / 2, l, r + 1, val);
+        }
+    };
+
+    vec <int> sz; // sz of v with v
+    vec <int> ind; // ind of v in obhod
+    vec <int> tin, tout;
+    vec <vec <int>> g;
+    vec <int> root, par; // root of heavy way of v; parent of v
+    vec <int> deep;
+    int n;
+
+    segm_for_hld tree; // sums on way
+
+    ll merge(ll a, ll b) {
+        return a + b;
+    }
+
+    bool anc(int p, int v) {
+        return tin[p] <= tin[v] && tout[v] <= tout[p];
+    }
+    int lca(int a, int b) {
+        if (anc(b, a)) return b;
+        if (anc(a, b)) return a;
+
+        if (deep[root[a]] > deep[root[b]]) a = par[root[a]];
+        else b = par[root[b]];
+
+        return lca(a, b);
+    }
+    vec <int> mysort_by_sz(vec <int>& A) {
+        vec <pii> a(A.size());
+        for (int i = 0; i < A.size(); i++) a[i] = {sz[A[i]], A[i]};
+        sort(a.begin(), a.end());
+        reverse(a.begin(), a.end());
+        vec <int> res;
+        for (pii x : a) res.push_back(x.second);
+        return res;
+    }
+
+    void count_sz_deep_par(int v, int p) {
+        par[v] = p;
+        sz[v] = 1;
+        deep[v] = deep[p] + 1;
+        for (int x : g[v]) {
+            if (x != p) {
+                count_sz_deep_par(x, v);
+                sz[v] += sz[x];
+            }
+        }
+    }
+    void count_time(int v, int& cl) {
+        tin[v] = cl, cl++;
+        for (int x : g[v]) {
+            if (x != par[v]) count_time(x, cl);
+        }
+        tout[v] = cl, cl++;
+    }
+    void count_path(int v) {
+        path.push_back(v);
+        g[v] = mysort_by_sz(g[v]);
+        for (int x : g[v]) {
+            if (x != par[v]) count_path(x);
+        }
+    }
+    ll get_ans_to_lca(int v, int lcav) {
+        ll ans = 0;
+        while (1) {
+            if (anc(root[v], lcav)) {
+                ans += tree.get(ind[v], ind[lcav]);
+                break;
+            }
+            ans += tree.get(ind[v], ind[root[v]]);
+            v = par[root[v]];
+        }
+        return ans;
+    }
+    void update_way_to_lca(int v, int lcav, ll val) {
+        while (1) {
+            if (anc(root[v], lcav)) {
+                tree.update(ind[v], ind[lcav], val);
+                break;
+            }
+            tree.update(ind[v], ind[root[v]], val);
+            v = par[root[v]];
+        }
+    }
+
+public:
+    vec <int> path;
+    HLD() {}
+    HLD(vec <vec <int>>& _g) {
+        n = _g.size();
+        g = _g;
+
+        sz = vec <int>(n);
+        par = vec <int>(n);
+        ind = vec <int>(n);
+        tin = vec <int>(n), tout = vec <int>(n);
+        root = vec <int>(n);
+        deep = vec <int>(n);
+        deep[0] = -1;
+
+        count_sz_deep_par(0, 0);
+        count_path(0);
+        int cl = 0;
+        count_time(0, cl);
+
+        root[path[0]] = path[0];
+        for (int i = 1; i < n; i++) {
+            if (anc(path[i - 1], path[i])) root[path[i]] = root[path[i - 1]];
+            else root[path[i]] = path[i];
+            ind[path[i]] = i;
+        }
+
+        tree = segm_for_hld(n);
+    }
+
+    ll get_ans_on_way(int a, int b) {
+        int lcav = lca(a, b);
+        ll sum = merge(get_ans_to_lca(a, lcav), get_ans_to_lca(b, lcav));
+        return sum - get_ans_to_lca(lcav, lcav);
+    }
+    void update_way(int a, int b, ll newval) {
+        int lcav = lca(a, b);
+        update_way_to_lca(a, lcav, newval);
+        update_way_to_lca(b, lcav, newval);
+        update_way_to_lca(lcav, lcav, -newval);
+    }
+};
+
+struct segm {
+private:
+    struct node {
+        ll sum = 0;
+        node() {
+            sum = 0;
+        }
+        node(ll _sum) {
+            sum = _sum;
+        }
+    };
+
+    node merge(node a, node b) {
+        return a.sum + b.sum;
+    }
+
+    int n, n2;
+    vec <node> g;
+    /*
+        void update(int v, int l, int r, int gll, int glr) {
+
+        }*/
+    node get(int v, int l, int r, int gll, int glr) {
+        if (glr <= l || r <= gll) return 0;
+        if (gll <= l && r <= glr) return g[v];
+        int nm = (l + r) >> 1;
+        return merge(get(2 * v, l, nm, gll, glr), get(2 * v + 1, nm, r, gll, glr));
+    }
+
+public:
+    segm() {}
+    segm(int _n) {
+        n = _n;
+        n2 = 1 << (int)(ceil(log2(n)) + 1);
+        g = vec <node>(n2);
+    }
+
+    ll get(int l, int r) {
+        return get(1, 0, n2 / 2, l, r).sum;
+    }
+    void update(int l, int r, ll val) { //!!!
+        //update(1, 0, n2 / 2, l, r, val);
+    }
+};
+
+struct lca {
+    vec <vec <int>> g;
+    int n;
+
+    vec <int> tin, tout, path;
+    vec <vec <int>> binups;
+
+    void dfs_count(int v, int p, int& cl) {
+        tin[v] = cl++;
+        path.push_back(v);
+        for (int x : g[v]) {
+            if (x != p) dfs_count(x, v, cl);
+        }
+        tout[v] = cl++;
+    }
+
+    lca() {}
+    lca(vec <vec <int>>& _g) {
+        g = _g;
+        n = g.size();
+
+        tin = vec <int>(n);
+        tout = vec <int>(n);
+        binups = vec <vec <int>>(logn, vec <int>(n, INTINF));
+        int cl = 0;
+        dfs_count(0, 0, cl);
+    }
+
+    bool anc(int p, int v) {
+        return tin[p] <= tin[v] && tout[v] <= tout[p];
+    }
+    int get_lca(int a, int b) {
+        if (anc(a, b)) return a;
+        if (anc(b, a)) return b;
+        for (int i = logn - 1; i >= 0; i--) {
+            if (!anc(binups[i][a], b)) {
+                a = binups[i][a];
+            }
+        }
+        return binups[0][a];
+    }
+};
+
+int main() {
+    FAST();
+
+    
+}
