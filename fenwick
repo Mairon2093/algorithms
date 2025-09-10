@@ -1,0 +1,64 @@
+//#define _GLIBCXX_DEBUG
+//#define _GLIBCXX_DEBUG_PEDANTIC
+
+#include <iostream>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+using ll = long long;
+using ld = long double;
+
+const int inf = 1e9 + 7;
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+const int maxN = 1e5 + 5;
+
+template <typename T>
+struct fenwick {
+    vector <T> dp;
+
+    fenwick(int _n) {
+        dp.resize(_n);
+    }
+
+    T sumbound(int r) {
+        T ans = 0;
+        for (; r > 0; r -= r & -r) ans += dp[r];
+        return ans;
+    }
+    T sum(int l, int r) {
+        return sumbound(r) - sumbound(l - 1);
+    }
+    void update(int ind, T val) {
+        T oldval = sum(ind, ind);
+        for (; ind < dp.size(); ind += ind & -ind) dp[ind] += val - oldval;
+    }
+};
+
+int main() {
+    FAST();
+
+    int n, q;
+    cin >> n >> q;
+
+    fenwick <ll> fucking_fenwick(n + 1);
+    while (q--) {
+        char t;
+        cin >> t;
+        if (t == 'A') {
+            int i, nval;
+            cin >> i >> nval;
+            fucking_fenwick.update(i, nval);
+        }
+        else if (t == 'Q') {
+            int l, r;
+            cin >> l >> r;
+            cout << fucking_fenwick.sum(l, r) << "\n";
+        }
+    }
+}
