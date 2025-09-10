@@ -1,0 +1,63 @@
+//#define _GLIBCXX_DEBUG
+//#define _GLIBCXX_DEBUG_PEDANTIC
+
+#include <iostream>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+using ll = long long;
+using ld = long double;
+using vi = vector <int>;
+
+const int inf = 1e9 + 7;
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+int merge(int a, int b) {
+    return min(a, b);
+}
+
+const int logn = 20;
+const int maxN = 1e5 + 5;
+
+template <typename T>
+struct sparce_table {
+private:
+    const int logn = 25;
+    vector <vector <int>> dp;
+    int n;
+
+    sparce_table() {}
+    sparce_table(vi& a) {
+        n = a.size();
+        dp = vector <vi>(logn, vi(n));
+
+        for (int i = 0; i < a.size(); i++) dp[0][i] = a[i];
+        for (int st = 1; st < logn; st++) {
+            for (int i = 1; i < a.size(); i++) {
+                if (i + (1 << (st - 1)) >= a.size()) {
+                    dp[st][i] = min(dp[st - 1][i], a[a.size() - 1]);
+                }
+                else {
+                    dp[st][i] = min(dp[st - 1][i], dp[st - 1][i + (1 << (st - 1))]);
+                }
+            }
+        }
+    }
+
+    int get(int l, int r) {
+        if (l > r) swap(l, r);
+        r++;
+        int k = __lg(r - l);
+        return min(dp[k][l], dp[k][r - (1 << k)]);
+    }
+};
+
+int main() {
+    FAST();
+
+}
