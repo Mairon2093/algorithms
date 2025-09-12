@@ -1,0 +1,73 @@
+//add new vertex in end of topsort of mask
+
+#pragma GCC optimize("o3")
+#include <iostream>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+template <typename T>
+istream& operator>>(istream& in, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) in >> a[i];
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) out << a[i] << " ";
+    return out;
+}
+template <typename T>
+ostream& operator<<(ostream& out, set <T>& a) {
+    for (const T& x : a) out << x << " ";
+    return out;
+}
+
+using ll = long long;
+using ld = long double;
+using pii = pair <int, int>;
+using pll = pair <ll, ll>;
+using ull = unsigned long long;
+
+template <typename T>
+using vec = vector <T>;
+template <typename T>
+using graph = vec <vec <T>>;
+
+const ll LLINF = 1e18 + 5;
+const int INTINF = 1e9 + 5;
+const ll MOD = 1e9 + 7;
+const int logn = 25;
+const int K = 1000;
+const int MAXN = 200000;
+
+int main() {
+    FAST();
+
+    int n, m;
+    cin >> n >> m;
+
+    vec <int> a(n);
+    for (int i = 0, x, v; i < m; i++) {
+        cin >> x >> v;
+        x--, v--;
+        a[x] |= 1 << v;
+    }
+
+    vec <ll> dp(1 << n);
+    dp[0] = 1;
+    for (int mask = 0; mask < (1 << n); mask++) {
+        for (int v = 0; v < n; v++) {
+            if (((mask >> v) & 1) == 1 || (a[v] & mask) != 0) {
+                continue;
+            }
+            dp[mask | (1 << v)] += dp[mask];
+        }
+    }
+
+    cout << dp[(1 << n) - 1];
+}
