@@ -1,0 +1,260 @@
+//#define _GLIBCXX_DEBUG
+//#define _GLIBCXX_DEBUG_PEDANTIC
+#pragma GCC optimize("o3")
+
+#include <iostream>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+using ll = long long;
+using ld = long double;
+using pii = pair <int, int>;
+using pll = pair <ll, ll>;
+
+template <typename T>
+using vec = vector <T>;
+
+const ll LLINF = 1e18 + 5;
+const int INTINF = 1e9 + 5;
+const ll MOD = 1e9 + 7;
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+template <typename T>
+istream& operator>>(istream& in, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) in >> a[i];
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) out << a[i] << " ";
+    return out;
+}
+template <typename T>
+ostream& operator<<(ostream& out, set <T>& a) {
+    for (const T& x : a) out << x << " ";
+    return out;
+}
+
+struct segm {
+private:
+    int n, n2;
+    vec <ll> g;
+    vec <ll> p;
+
+    ll merge(ll a, ll b) {
+        return a + b;
+    }
+    void apply(int v, int sz, ll val) {
+        p[v] += val;
+        g[v] += val * sz;
+    }
+    void push(int v, int sz) {
+        if (p[v] == 0) return;
+        apply(2 * v, sz / 2, p[v]);
+        apply(2 * v + 1, sz / 2, p[v]);
+        p[v] = 0;
+    }
+    ll get(int v, int l, int r, int gll, int glr) {
+        if (glr <= l || r <= gll) return 0;
+        if (gll <= l && r <= glr) return g[v];
+        push(v, r - l);
+        int nm = ( l + r )>> 1;
+        return merge(get(2 * v, l, nm, gll, glr), get(2 * v + 1, nm, r, gll, glr));
+    }
+    void update(int v, int l, int r, int gll, int glr, ll val) {
+        if (glr <= l || r <= gll) return;
+        if (gll <= l && r <= glr) {
+            apply(v, r - l, val);
+            return;
+        }
+        push(v, r - l);
+        int nm = (l + r) >> 1;
+        update(2* v, l, nm, gll, glr, val);
+        update(2 * v + 1, nm, r, gll, glr, val);
+        g[v] = merge(g[2 * v], g[2 * v + 1]);
+    }
+public:
+    segm(){}
+    segm(int _n) {
+        n = _n;
+        n2 = 1 << (int)(ceil(log2(n)) + 1);
+        g = vec <ll> (n2);
+        p = vec <ll> (n2);
+    }
+    ll get(int l, int r) {
+        if (r < l) swap(l, r);
+        return get(1, 0, n2 / 2, l, r + 1);
+    }
+    void update(int l, int r, ll val) {
+        if (r < l) swap(l, r);
+        update(1, 0, n2 / 2, l, r + 1, val);
+    }
+};
+
+struct HLD {
+private:
+    vec <int> sz; // sz of v with v
+    vec <int> ind; // ind of v in obhod
+    vec <int> tin, tout;
+    vec <vec <int>> g;
+    vec <int> root, par; // root of heavy way of v; parent of v
+    vec <int> deep;
+    int n;
+
+    segm tree; // sums on way
+
+    ll merge(ll a, ll b) {
+        return a + b;
+    }
+
+    bool anc(int p, int v) {
+        return tin[p] <= tin[v] && tout[v] <= tout[p];
+    }
+    int lca(int a, int b) {
+        if (anc(b, a)) return b;
+        if (anc(a, b)) return a;
+
+        if (deep[root[a]] > deep[root[b]]) a = par[root[a]];
+        else b = par[root[b]];
+
+        return lca(a, b);
+    }
+    vec <int> mysort_by_sz(vec <int>& A) {
+        vec <pii> a(A.size());
+        for (int i = 0; i < A.size(); i++) a[i] = {sz[A[i]], A[i]};
+        sort(a.begin(), a.end());
+        reverse(a.begin(), a.end());
+        vec <int> res;
+        for (pii x : a) res.push_back(x.second);
+        return res;
+    }
+
+    void count_sz_deep_par(int v, int p) {
+        par[v] = p;
+        sz[v] = 1;
+        deep[v] = deep[p] + 1;
+        for (int x : g[v]) {
+            if (x != p) {
+                count_sz_deep_par(x, v);
+                sz[v] += sz[x];
+            }
+        }
+    }
+    void count_time(int v, int& cl) {
+        tin[v] = cl, cl++;
+        for (int x : g[v]) {
+            if (x != par[v]) count_time(x, cl);
+        }
+        tout[v] = cl, cl++;
+    }
+    void count_path(int v) {
+        path.push_back(v);
+        g[v] = mysort_by_sz(g[v]);
+        for (int x : g[v]) {
+            if (x != par[v]) count_path(x);
+        }
+    }
+    ll get_ans_to_lca(int v, int lcav) {
+        ll ans = 0;
+        while (1) {
+            if (anc(root[v], lcav)) {
+                ans += tree.get(ind[v], ind[lcav]);
+                break;
+            }
+            ans += tree.get(ind[v], ind[root[v]]);
+            v = par[root[v]];
+        }
+        return ans;
+    }
+    void update_way_to_lca(int v, int lcav, ll val) {
+        while (1) {
+            if (anc(root[v], lcav)) {
+                tree.update(ind[v], ind[lcav], val);
+                break;
+            }
+            tree.update(ind[v], ind[root[v]], val);
+            v = par[root[v]];
+        }
+    }
+public:
+    vec <int> path;
+    HLD() {}
+    HLD(vec <vec <int>>& _g) {
+        n = _g.size();
+        g = _g;
+
+        sz = vec <int>(n);
+        par = vec <int>(n);
+        ind = vec <int>(n);
+        tin = vec <int>(n), tout = vec <int>(n);
+        root = vec <int>(n);
+        deep = vec <int>(n);
+        deep[0] = -1;
+
+        count_sz_deep_par(0, 0);
+        count_path(0);
+        int cl = 0;
+        count_time(0, cl);
+
+        root[path[0]] = path[0];
+        for (int i = 1; i < n; i++) {
+            if (anc(path[i - 1], path[i])) root[path[i]] = root[path[i - 1]];
+            else root[path[i]] = path[i];
+            ind[path[i]] = i;
+        }
+
+        tree = segm(n);
+    }
+
+    ll get_ans_on_way(int a, int b) {
+        int lcav = lca(a, b);
+        ll sum = merge(get_ans_to_lca(a, lcav), get_ans_to_lca(b, lcav));
+        return sum - get_ans_to_lca(lcav, lcav);
+    }
+    void update_way(int a, int b, ll newval) {
+        int lcav = lca(a, b);
+        update_way_to_lca(a, lcav, newval);
+        update_way_to_lca(b, lcav, newval);
+        update_way_to_lca(lcav, lcav, -newval);
+    }
+};
+
+signed main() {
+    FAST();
+
+    int n;
+    cin >> n;
+
+    vec <vec <int>> g(n);
+    for (int i= 1, a, b; i < n; i++) {
+        cin >> a >> b;
+        a--, b--;
+        g[a].push_back(b), g[b].push_back(a);
+    }
+
+    HLD hld(g);
+    int m;
+    cin >> m;
+
+    while (m--) {
+        char t;
+        cin >> t;
+        if (t == '?') {
+            int v;
+            cin >> v;
+            v--;
+            cout << hld.get_ans_on_way(v, v) << "\n";
+        }
+        else if (t == '+') {
+            int a, b, d;
+            cin >> a >> b >> d;
+            a--, b--;
+            hld.update_way(a, b, d);
+        }
+    }
+}
