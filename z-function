@@ -1,0 +1,66 @@
+//#pragma GCC optimize("o3")
+//#pragma GCC optimize("avx2")
+#include <iostream>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+template <typename T>
+istream& operator>>(istream& in, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) in >> a[i];
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) out << a[i] << " ";
+    return out;
+}
+template <typename T>
+ostream& operator<<(ostream& out, set <T>& a) {
+    for (const T& x : a) out << x << " ";
+    return out;
+}
+
+using ll = long long;
+using ld = long double;
+using pii = pair <int, int>;
+using pll = pair <ll, ll>;
+using ull = unsigned long long;
+
+template <typename T>
+using vec = vector <T>;
+
+const ll LLINF = 1e18 + 5;
+const int INTINF = 1e9 + 5;
+const ll MOD = 1e9 + 7;
+const int logn = 25;
+const int K = 500;
+const int MAXN = 200000;
+
+vec <int> z_f(string& s) {
+    int n = (int)s.size();
+    vec <int> z(n, 0);
+    int l = 0, r = 0;
+    for (int i = 1; i < n; i++) {
+        if (i <= r) z[i] = min(r - i + 1, z[i - l]);
+        while (i + z[i] < n && s[z[i]] == s[i + z[i]]) z[i]++;
+        if (i + z[i] - 1 > r) {
+            r = i + z[i] - 1;
+            l = i;
+        }
+    }
+    return z;
+}
+
+int main() {
+    FAST();
+    string s;
+    cin >> s;
+    vec <int> z = z_f(s);
+    cout << z;
+}
