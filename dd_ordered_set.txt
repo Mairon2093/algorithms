@@ -1,0 +1,146 @@
+#pragma GCC target("avx2")
+#pragma GCC optimize("O3")
+
+//#include <x86intrin.h>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+mt19937 seed(time(0));
+uniform_int_distribution <int> rnd(-1e9, 1e9);
+
+struct ordered_set {
+private:
+    struct node {
+        int key = 0;
+        int size = 0;
+        int priority = 0;
+        int cnt = 0;
+
+        node* left = nullptr;
+        node* right = nullptr;
+
+        node(int _key) {
+            key = _key;
+            cnt = 1;
+            size = 1;
+            priority = rnd(seed);
+        }
+    };
+
+    node* root = nullptr;
+
+    int get_cnt(node* v) {
+        if (!v) return 0;
+        return v->cnt;
+    }
+    int __size(node* v) {
+        if (!v) return 0;
+        v->size = 1 + __size(v->right) + __size(v->left);
+        return v->size;
+    }
+
+    void update_node(node* v) {
+        if (!v) return;
+        v->cnt = 1 + get_cnt(v->left) + get_cnt(v->right);
+        v->size = 1 + __size(v->right) + __size(v->left);
+    }
+
+    node* merge(node* L, node* R) {
+        if (!L) return R;
+        if (!R) return L;
+
+        if (R->priority <= L->priority) {
+            L->right = merge(L->right, R);
+            update_node(L);
+            return L;
+        }
+        else {
+            R->left = merge(L, R->left);
+            update_node(R);
+            return R;
+        }
+    }
+
+    pair <node*, node*> split(node* parent, int val) {
+        if (!parent) return {nullptr, nullptr};
+
+        if (val <= parent->key) {
+            pair <node*, node*> a = split(parent->left, val);
+            parent->left = a.second;
+            update_node(parent);
+            return {a.first, parent};
+        }
+        else {
+            pair <node*, node*> a = split(parent->right, val);
+            parent->right = a.first;
+            update_node(parent);
+            return {parent, a.second};
+        }
+    }
+
+    int __get_kth(node* v, int ind) { //переписать на возрастание
+        if (ind <= get_cnt(v->left)) {
+            return __get_kth(v->left, ind);
+        } else if (ind == get_cnt(v->left) + 1) {
+            return v->key;
+        }
+        else {
+            return __get_kth(v->right, ind - get_cnt(v->left) - 1);
+        }
+    }
+
+public:
+    ordered_set(){}
+
+    int size() {
+        return __size(root);
+    }
+
+    void print(node* v) {
+        if (!v) return;
+        print(v->left);
+        cout << v->key << " ";
+        print(v->right);
+    }
+
+    void insert(int val) {
+        pair <node*, node*> a = split(root, val);
+        node* new_node = new node(val);
+        root = merge(merge(a.first, new_node), a.second);
+    }
+
+    void del(int val) {
+        pair <node*, node*> cut1 = split(root, val);
+        pair <node*, node*> cut2 = split(cut1.first, val);
+        root = merge(cut1.first, cut2.second);
+    }
+
+    int get_kth(int ind) {
+        assert(0 < ind && ind <= size());
+        return __get_kth(root, ind);
+    }
+};
+
+signed main() {
+    ordered_set pivo;
+
+    int queries_cnt;
+    cin >> queries_cnt;
+    while (queries_cnt--) {
+        int type, val;
+        cin >> type >> val;
+
+        if (type == 1) {
+            pivo.insert(val);
+            cout << "inserted\n";
+        }
+        else if (type == -1) {
+            pivo.del(val);
+            cout << "deleted\n";
+        }
+        else if (type == 0) { //indexed by 1 !!! and <= (pivo.size())
+            cout << "k-th val is " << pivo.get_kth(val) << "\n";
+        }
+    }
+}
