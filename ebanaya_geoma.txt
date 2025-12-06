@@ -1,0 +1,422 @@
+#include <iostream>
+#include <bits/stdc++.h>
+
+using namespace std;
+
+using ll = long long;
+using ld = long double;
+using pii = pair <int, int>;
+using pll = pair <ll, ll>;
+
+template <typename T>
+using vec = vector <T>;
+
+const ll LLINF = 1e18 + 5;
+const int INTINF = 1e9 + 5;
+const ll MOD = 1e9 + 7;
+const int base = 37;
+const ld eps = 1e-10;
+
+bool equal(ld a, ld b) {
+    return abs(a - b) < eps;
+}
+int sign(ld a) {
+    if (a > 0) return 1;
+    if (a < 0) return -1;
+    return 0;
+}
+
+void FAST() {
+    cin.tie(0);
+    ios::sync_with_stdio(false);
+}
+
+template <typename T>
+istream& operator>>(istream& in, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) in >> a[i];
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) out << a[i] << " ";
+    return out;
+}
+
+template <typename T>
+struct Point {
+    T x, y;
+    Point() {
+        x = y = 0;
+    }
+    Point(T _x, T _y) {
+        x = _x;
+        y = _y;
+    }
+
+    bool operator ==(Point b) {
+        return equal(x, b.x) && equal(y, b.y);
+    }
+    T operator *(Point b) {
+        return x * b.x + y * b.y;
+    }
+    T operator ^(Point b) {
+        return x * b.y - y * b.x;
+    }
+    Point operator /(ld b) {
+        if (equal(b, 0)) {
+            cerr << "divided by zero";
+            exit(139);
+        }
+        return Point(x / b, y / b);
+    }
+    Point operator +(Point b) {
+        return Point(x + b.x, y + b.y);
+    }
+    Point operator -(Point b) {
+        return Point(x - b.x, y - b.y);
+    }
+    void operator-=(Point b) {
+        x -= b.x;
+        y -= b.y;
+    }
+    void operator +=(Point b) {
+        x += b.x;
+        y += b.y;
+    }
+
+    ld len() {
+        return sqrtl(x * x + y * y);
+    }
+    T len2() {
+        return x * x + y * y;
+    }
+};
+template <typename T>
+istream& operator>>(istream& in, Point <T>& a) {
+    in >> a.x >> a.y;
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, Point <T> a) {
+    out << fixed << setprecision(4) << a.x << " " << a.y;
+    return out;
+}
+
+template <typename T>
+ld sinus(Point <T> A, Point <T> B) {
+    if (equal(A.len() * B.len(), 0)) {
+        cerr << "divided by zero";
+        exit(139);
+    }
+    return (ld)abs(A ^ B) / (A.len() * B.len());
+}
+template <typename T>
+ld cosinus(Point <T> A, Point <T> B) {
+    if (equal(A.len() * B.len(), 0)) {
+        cerr << "divided by zero";
+        exit(139);
+    }
+    return (ld)(A * B) / (A.len() * B.len());
+}
+template <typename T>
+ld angle(Point <T> A, Point <T> B) { //угол между vector A and vector B
+    return atan2l(sinus(A, B), cosinus(A, B));
+}
+
+template <typename T>
+bool collinear(Point <T> A, Point <T> B) {
+    return equal(A ^ B, 0);
+}
+template <typename T>
+bool co_directed(Point <T> A, Point <T> B) {
+    return equal(A ^ B, 0) && equal(A * B, A.len() * B.len());
+}
+
+/**
+ * angle ABC < 180;
+ * point P
+ */
+template <typename T>
+bool point_in_angle(Point <T> A, Point <T> B, Point <T> C, Point <T> P) { //ok
+    A -= B;
+    C -= B;
+    P -= B;
+    B -= B;
+
+    ld p1 = A ^ P;
+    ld p2 = P ^ C;
+    ld p3 = A ^ C;
+
+    if (sign(p1) == -1) {
+        p1 *= -1;
+        p2 *= -1;
+        p3 *= -1;
+    }
+    return p1 >= 0 && p2 >= 0 && p3 >= 0;
+}
+template <typename T>
+bool point_in_triangle(Point <T> A, Point <T> B, Point <T> C, Point <T> P) {
+    return point_in_angle(A, B, C, P) && point_in_angle(A, C, B, P) && point_in_angle(C, B, A, P);
+}
+
+template <typename T>
+struct Segment {
+    Point <T> A;
+    Point <T> B;
+
+    Segment() {}
+    Segment(Point <T> _A, Point <T> _B) {
+        A = _A;
+        B = _B;
+    }
+};
+template <typename T>
+istream& operator>>(istream& in, Segment <T>& a) {
+    in >> a.A >> a.B;
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, Segment <T> a) {
+    out << fixed << setprecision(4) << "(" << a.A << ") (" << a.B << ")";
+    return out;
+}
+
+/**
+ * n - направляющий вектор прямой;
+ * A - точка на прямой
+ */
+// ax + by + c = 0 -> r = nt + A
+template <typename T>
+struct Line {
+    Point <T> n;
+    Point <T> A;
+
+    Line() {}
+    /**
+     * a, b, c - коэффициенты уравнения прямой ax + by + c = 0
+     */
+    Line(T a, T b, T c) {
+        if (equal(a * a + b * b, 0)) {
+            cerr << "invalid line";
+            exit(139);
+        }
+        if (equal(a, 0)) {
+            n = Point((T)1, (T)0);
+            A = Point((T)1, -c / b);
+        } else {
+            n = Point(-b / a, (T)1);
+            A = Point(-c / a, (T)0);
+        }
+    }
+    //P, Q - точки на прямой
+    Line(Point <T> P, Point <T> Q) {
+        n = Q - P;
+        A = P;
+    }
+};
+
+/**
+ * A - стартовая точка;
+ * n - направляющий вектор луча
+ */
+template <typename T>
+struct Beam {
+    Point <T> A;
+    Point <T> n;
+
+    Beam() {}
+    Beam(Point <T> start, Point <T> on_beam) {
+        A = start;
+        n = on_beam - start;
+    }
+};
+
+template <typename T>
+bool check_intersection(Line <T> line1, Line <T> line2) { // ok
+    if (collinear(line1.n, line2.n)) {
+        return collinear(line1.A - line2.A, line1.n);
+    }
+    return 1;
+}
+template <typename T>
+bool check_intersection(Line <T> line, Point <T> P) { // ok
+    return co_directed(P - line.A, line.n);
+}
+
+template <typename T>
+bool check_intersection(Segment <T> segm, Point <T> P) { // ok
+    return (co_directed(P - segm.A, segm.B - segm.A) && co_directed(P - segm.B, segm.A - segm.B));
+}
+template <typename T>
+bool check_intersection(Segment <T> segm, Line <T> line) {
+    ld p1 = line.n ^ (segm.A - line.A);
+    ld p2 = line.n ^ (segm.B - line.A);
+    if (p1 < 0) {
+        p1 *= -1;
+        p2 *= -1;
+    } else if (equal(p1, 0)) {
+        return 1;
+    }
+    return p1 >= 0 && p2 <= 0;
+}
+template <typename T>
+bool check_intersection(Segment <T> segm1, Segment <T> segm2) { //ok
+    if (check_intersection(segm1, segm2.A)) return 1;
+    if (check_intersection(segm1, segm2.B)) return 1;
+    if (check_intersection(segm2, segm1.A)) return 1;
+    if (check_intersection(segm2, segm1.B)) return 1;
+
+    int s1 = sign((segm1.A - segm1.B) ^ (segm2.A - segm1.B));
+    int s2 = sign((segm1.A - segm1.B) ^ (segm2.B - segm1.A));
+    int s3 = sign((segm2.A - segm2.B) ^ (segm1.A - segm2.B));
+    int s4 = sign((segm2.A - segm2.B) ^ (segm1.B - segm2.A));
+
+    return s1 * s2 < 0 && s3 * s4 < 0;
+    /* а это я придумала)
+    if (check_intersection(segm1, segm2.A)) return 1;
+    if (check_intersection(segm1, segm2.B)) return 1;
+    if (check_intersection(segm2, segm1.A)) return 1;
+    if (check_intersection(segm2, segm1.B)) return 1;
+
+    return (point_in_angle(segm2.A, segm1.A, segm2.B, segm1.B) && !
+            point_in_triangle(segm1.A, segm2.A, segm2.B, segm1.B)) &&
+           (point_in_angle(segm2.A, segm1.B, segm2.B, segm1.A) && !
+            point_in_triangle(segm1.B, segm2.A, segm2.B, segm1.A));*/
+}
+
+template <typename T>
+bool check_intersection(Beam <T> beam, Point <T> A) { //ok
+    return co_directed(A - beam.A, beam.n);
+}
+template <typename T>
+bool check_intersection(Beam <T> beam, Segment <T> segm) {
+    return point_in_angle(segm.A, beam.A, segm.B, beam.n + beam.A);
+}
+template <typename T>
+bool check_intersection(Beam <T> beam, Line <T> line) { //ok m wa4 -> wa16
+    if (check_intersection(line, beam.A)) return 1;
+    return sign(line.n ^ (beam.A - line.A)) * sign(line.n ^ beam.n) < 0;
+}
+template <typename T>
+bool check_intersection(Beam <T> beam1, Beam <T> beam2) { //ok
+    if (collinear(beam1.n, beam2.n)) {
+        return check_intersection(beam1, beam2.A) || check_intersection(beam2, beam1.A);
+    }
+    if (check_intersection(beam1, beam2.A) || check_intersection(beam2, beam1.A)) return 1;
+    return sign(beam1.n ^ beam2.n) * sign(beam1.n ^ (beam2.A - beam1.A)) < 0 &&
+           sign(beam2.n ^ beam1.n) * sign(beam2.n ^ (beam1.A - beam2.A)) < 0;
+}
+
+template <typename T>
+ld dist(Point <T> a, Point <T> b) { //ok
+    return sqrtl((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+}
+template <typename T>
+ll dist2(Point <T> a, Point <T> b) { //ok
+    return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+}
+template <typename T>
+ld dist(Line <T> line, Point <T> P) { //ok
+    if (P == line.A) return 0;
+    return dist(line.A, P) * sinus(line.n, P - line.A);
+}
+template <typename T>
+ld dist(Line <T> line1, Line <T> line2) {
+    if (check_intersection(line1, line2)) return 0;
+    return dist(line1, line2.A);
+}
+template <typename T>
+ld dist(Segment <T> segm, Point <T> P) { //ok
+    if (check_intersection(segm, P)) return 0;
+    ld d = min(dist(segm.A, P), dist(P, segm.B));
+    if (segm.A == segm.B) return d;
+
+    if (cosinus(P - segm.A, segm.B - segm.A) >= 0 && cosinus(P - segm.B, segm.A - segm.B) >= 0) {
+        d = min(d, dist(Line(segm.A, segm.B), P));
+    }
+    return d;
+}
+template <typename T>
+ld dist(Segment <T> segm, Line <T> line) {
+    if (check_intersection(segm, line)) return 0;
+    return min(dist(line, segm.A), dist(line, segm.B));
+}
+template <typename T>
+ld dist(Segment <T> segm1, Segment <T> segm2) { //ok
+    if (check_intersection(segm1, segm2)) return 0;
+    ld d = min({
+        dist(segm2, segm1.A),
+        dist(segm2, segm1.B),
+        dist(segm1, segm2.A),
+        dist(segm1, segm2.B)
+    });
+    return d;
+}
+template <typename T>
+ld dist(Beam <T> beam, Point <T> P) { //ok
+    ld d = dist(beam.A, P);
+    if ((P - beam.A) * beam.n >= 0) d = min(d, dist(Line <T>(beam.A, beam.A + beam.n), P));
+    return d;
+}
+template <typename T>
+ld dist(Beam <T> beam, Segment <T> segm) {
+    if (check_intersection(beam, segm)) return 0;
+    return min({dist(beam, segm.A), dist(beam, segm.B), dist(segm, beam.A)});
+}
+template <typename T>
+ld dist(Beam <T> beam, Line <T> line) {
+    if (check_intersection(beam, line)) return 0;
+    return dist(line, beam.A);
+}
+template <typename T>
+ld dist(Beam <T> beam1, Beam <T> beam2) {
+    if (check_intersection(beam1, beam2)) return 0;
+    return min(dist(beam2, beam1.A), dist(beam1, beam2.A));
+}
+
+/*
+template <typename T>
+Point <ld> intersection_point(Line <T> line1, Line <T> line2) {
+
+}*/
+
+int main() {
+    FAST();
+
+    Point <ll> A, B, C, D;
+    cin >> A >> B >> C >> D;
+
+    cout << fixed << setprecision(10);
+    // A - C
+    cout << dist(A, C) << "\n"; //ok
+    // A - segm(CD)
+    cout << dist(Segment <ll>(C, D), A) << "\n"; //ok
+    // A - beam(CD)
+    cout << dist(Beam <ll>(C, D), A) << "\n"; //ok
+    // A - line(CD)
+    cout << dist(Line <ll>(C, D), A) << "\n"; //ok
+    // segm(AB) - C
+    cout << dist(Segment <ll>(A, B), C) << "\n"; //ok
+    // segm(AB) - segm(CD)
+    cout << dist(Segment <ll>(A, B), Segment <ll>(C, D)) << "\n"; //ok
+    // segm(AB) - beam(CD)
+    cout << dist(Beam <ll>(C, D), Segment <ll>(A, B)) << "\n";
+    // segm(AB) - line(CD)
+    cout << dist(Segment <ll>(A, B), Line <ll>(C, D)) << "\n";
+    // beam(AB) - C
+    cout << dist(Beam <ll>(A, B), C) << "\n";
+    // beam(AB) - segm(CD)
+    cout << dist(Beam <ll>(A, B), Segment <ll>(C, D)) << "\n";
+    // beam(AB) - beam(CD)
+    cout << dist(Beam <ll>(A, B), Beam <ll>(C, D)) << "\n";
+    // beam(AB) - line(CD)
+    cout << dist(Beam <ll>(A, B), Line <ll>(C, D)) << "\n";
+    // line(AB) - C
+    cout << dist(Line <ll>(A, B), C) << "\n";
+    // line(AB) - segm(CD)
+    cout << dist(Segment <ll>(C, D), Line <ll>(A, B)) << "\n";
+    // line(AB) - beam(CD)
+    cout << fixed << setprecision(10) << dist(Beam <ll>(C, D), Line <ll>(A, B)) << "\n";
+    // line(AB) - line(CD)
+    cout << fixed << setprecision(10) << dist(Line <ll>(A, B), Line <ll>(C, D)) << "\n";
+}
