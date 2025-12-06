@@ -160,9 +160,9 @@ struct Segment {
 
     Segment() {}
     template <typename Y>
-    Segment(Point <Y> _A, Point <Y> _B) {
-        A = _A;
-        B = _B;
+    Segment(Point <Y> A_, Point <Y> B_) {
+        A = A_;
+        B = B_;
     }
 };
 
@@ -183,10 +183,9 @@ struct Line {
      */
     Line(T _a, T _b, T _c) {
         a = _a, b = _b, c = _c;
-        if (equal(a * a + b * b, 0)) {
-            cerr << "invalid line";
-            exit(139);
-        }
+
+        assert(!equal(a * a + b * b, 0));
+
         if (equal(a, 0)) {
             n = Point((T)1, (T)0);
             A = Point((T)1, -c / b);
@@ -272,16 +271,16 @@ bool check_intersection(Segment <T> segm, Line <T> line) {
         p1 *= -1;
         p2 *= -1;
     } else if (equal(p1, 0)) {
-        return 1;
+        return true;
     }
     return p1 >= 0 && p2 <= 0;
 }
 template <typename T>
 bool check_intersection(Segment <T> segm1, Segment <T> segm2) { //ok
-    if (check_intersection(segm1, segm2.A)) return 1;
-    if (check_intersection(segm1, segm2.B)) return 1;
-    if (check_intersection(segm2, segm1.A)) return 1;
-    if (check_intersection(segm2, segm1.B)) return 1;
+    if (check_intersection(segm1, segm2.A)) return true;
+    if (check_intersection(segm1, segm2.B)) return true;
+    if (check_intersection(segm2, segm1.A)) return true;
+    if (check_intersection(segm2, segm1.B)) return true;
 
     int s1 = sign((segm1.A - segm1.B) ^ (segm2.A - segm1.B));
     int s2 = sign((segm1.A - segm1.B) ^ (segm2.B - segm1.A));
@@ -324,7 +323,7 @@ bool check_intersection(Beam <T> beam1, Beam <T> beam2) { //ok
     if (collinear(beam1.n, beam2.n)) {
         return check_intersection(beam1, beam2.A) || check_intersection(beam2, beam1.A);
     }
-    if (check_intersection(beam1, beam2.A) || check_intersection(beam2, beam1.A)) return 1;
+    if (check_intersection(beam1, beam2.A) || check_intersection(beam2, beam1.A)) return true;
     return sign(beam1.n ^ beam2.n) * sign(beam1.n ^ (beam2.A - beam1.A)) < 0 &&
            sign(beam2.n ^ beam1.n) * sign(beam2.n ^ (beam1.A - beam2.A)) < 0;
 }
