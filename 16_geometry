@@ -315,8 +315,7 @@ bool check_intersection(Beam <T> beam, Point <T> A) { //ok
     return co_directed(A - beam.A, beam.n);
 }
 template <typename T>
-bool check_intersection(Beam <T> beam, Segment <T> segm) { //WA
-    //return point_in_angle(segm.A, beam.A, segm.B, beam.n + beam.A);
+bool check_intersection(Beam <T> beam, Segment <T> segm) {
     Line <T> l1(beam.A, beam.A + beam.n);
     Line <T> l2(segm.A, segm.B);
     Intersection_point inter = intersection_point(l1, l2);
@@ -418,41 +417,4 @@ ld dist(Beam <T> beam1, Beam <T> beam2) {
 
 int main() {
     FAST();
-
-    Point <ll> A, B, C, D;
-    cin >> A >> B >> C >> D;
-
-    cout << fixed << setprecision(10);
-    // A - C
-    cout << dist(A, C) << "\n"; //ok
-    // A - segm(CD)
-    cout << dist(Segment <ll>(C, D), A) << "\n"; //ok
-    // A - beam(CD)
-    cout << dist(Beam <ll>(C, D), A) << "\n"; //ok
-    // A - line(CD)
-    cout << dist(Line <ll>(C, D), A) << "\n"; //ok
-    // segm(AB) - C
-    cout << dist(Segment <ll>(A, B), C) << "\n"; //ok
-    // segm(AB) - segm(CD)
-    cout << dist(Segment <ll>(A, B), Segment <ll>(C, D)) << "\n"; //ok
-    // segm(AB) - beam(CD)
-    cout << dist(Beam <ll>(C, D), Segment <ll>(A, B)) << "\n"; //ok
-    // segm(AB) - line(CD)
-    cout << dist(Segment <ll>(A, B), Line <ll>(C, D)) << "\n"; //ok
-    // beam(AB) - C
-    cout << dist(Beam <ll>(A, B), C) << "\n"; //ok
-    // beam(AB) - segm(CD)
-    cout << dist(Beam <ll>(A, B), Segment <ll>(C, D)) << "\n"; //rewr
-    // beam(AB) - beam(CD)
-    cout << dist(Beam <ll>(A, B), Beam <ll>(C, D)) << "\n"; //rewr
-    // beam(AB) - line(CD)
-    cout << dist(Beam <ll>(A, B), Line <ll>(C, D)) << "\n"; //rewr
-    // line(AB) - C
-    cout << dist(Line <ll>(A, B), C) << "\n"; //ok
-    // line(AB) - segm(CD)
-    cout << dist(Segment <ll>(C, D), Line <ll>(A, B)) << "\n"; // rewr
-    // line(AB) - beam(CD)
-    cout << dist(Beam <ll>(C, D), Line <ll>(A, B)) << "\n"; //rewr
-    // line(AB) - line(CD)
-    cout << dist(Line <ll>(A, B), Line <ll>(C, D)) << "\n";
 }
