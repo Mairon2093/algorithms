@@ -15,6 +15,7 @@ const int INTINF = 1e9 + 5;
 const ll MOD = 1e9 + 7;
 const int base = 37;
 const ld eps = 1e-10;
+const int SIGNS_CNT = 4l
 
 bool equal(ld a, ld b) {
     return abs(a - b) < eps;
@@ -92,7 +93,7 @@ istream& operator>>(istream& in, Point <T>& a) {
 }
 template <typename T>
 ostream& operator<<(ostream& out, Point <T> a) {
-    out << fixed << setprecision(4) << a.x << " " << a.y;
+    out << fixed << setprecision(SIGNS_CNT) << a.x << " " << a.y;
     return out;
 }
 
@@ -164,16 +165,6 @@ struct Segment {
         B = _B;
     }
 };
-template <typename T>
-istream& operator>>(istream& in, Segment <T>& a) {
-    in >> a.A >> a.B;
-    return in;
-}
-template <typename T>
-ostream& operator<<(ostream& out, Segment <T> a) {
-    out << fixed << setprecision(4) << "(" << a.A << ") (" << a.B << ")";
-    return out;
-}
 
 /**
  * n - направляющий вектор прямой;
