@@ -15,7 +15,7 @@ const int INTINF = 1e9 + 5;
 const ll MOD = 1e9 + 7;
 const int base = 37;
 const ld eps = 1e-10;
-const int SIGNS_CNT = 4l
+const int SIGNS_CNT = 4;
 
 bool equal(ld a, ld b) {
     return abs(a - b) < eps;
