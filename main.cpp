@@ -63,6 +63,13 @@ public:
     }
 };
 
+class NotSquareMatrix : public Error {
+public:
+    string error_message() override {
+        return "error: matrix is not square, need square matrix";
+    }
+};
+
 template <typename T>
 class Matrix {
 public:
@@ -113,7 +120,7 @@ public:
     }
     Matrix <T> operator +(Matrix <T>& other) {
         if (!(n == other.n && m == other.m)) {
-            return WrongMatrixSize({n, m}, {other.n, other.m});
+            throw WrongMatrixSize({n, m}, {other.n, other.m});
         }
 
         Matrix <T> res(n, m);
@@ -126,7 +133,7 @@ public:
     }
     Matrix <T> operator -(Matrix <T>& other) {
         if (!(n == other.n && m == other.m)) {
-            return WrongMatrixSize({n, m}, {other.n, other.m});
+            throw WrongMatrixSize({n, m}, {other.n, other.m});
         }
 
         Matrix <T> res(n, m);
@@ -147,7 +154,12 @@ public:
         }
         return res;
     }
-    T determinate() {}
+    T determinate() {
+        if (!(n == m)) {
+            throw NotSquareMatrix();
+        }
+
+    }
     //детерминант
 };
 
@@ -172,4 +184,10 @@ ostream& operator<<(ostream& out, Matrix <T>& a) {
     return out;
 }
 
-int main() {}
+int main() {
+    try {
+
+    }
+    catch (){
+    }
+}
