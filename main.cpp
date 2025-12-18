@@ -36,39 +36,32 @@ string to_string(pair <T, Y>& p) {
     return ("(" + to_string(p.first) + "; " + to_string(p.second) + ")");
 }
 
-class Error {
-public:
-    virtual ~Error() = default;
-    virtual string error_message() = 0;
+enum class Errors {
+    WrongMatrixSize,
+    DivisionByZero,
+    NotSquareMatrix
 };
+/*
+ messages:
+"wrong matrix's sizes"
+"division by zero"
+"matrix is not square, need square matrix"
+ */
+using enum Errors;
 
-class WrongMatrixSize : public Error {
-    pair <int, int> size_matr1;
-    pair <int, int> size_matr2;
+string convert_message_by_error(Errors error_state) {
+    switch (error_state) {
+        case WrongMatrixSize:
+            return "wrong matrix's sizes";
+        case DivisionByZero:
+            return "division by zero";
+        case NotSquareMatrix:
+            return "matrix is not square, need square matrix";
+    }
+    return "unknown error";
+}
 
-public:
-    WrongMatrixSize(pair <int, int> size1, pair <int, int> size2) {
-        size_matr1 = size1;
-        size_matr2 = size2;
-    }
-    string error_message() override {
-        return "error: wrong matrix's sizes: " + to_string(size_matr1) + " with " + to_string(size_matr2);
-    }
-};
-
-class DivisionByZero : public Error {
-public:
-    string error_message() override {
-        return "error: division by zero";
-    }
-};
-
-class NotSquareMatrix : public Error {
-public:
-    string error_message() override {
-        return "error: matrix is not square, need square matrix";
-    }
-};
+#define extended_assert(condition, error_type) { if (!condition) { std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ") ERROR: " << convert_message_by_error(error_type) << std::endl;}}
 
 template <typename T>
 class Matrix {
@@ -104,9 +97,7 @@ public:
     }
 
     Matrix <T> operator *(Matrix <T>& other) {
-        if (!(m == other.n)) {
-            throw WrongMatrixSize({n, m}, {other.n, other.m});
-        }
+        extended_assert((m != other.n), WrongMatrixSize);
 
         Matrix <T> res(n, other.m);
         for (int row = 0; row < n; row++) {
@@ -119,9 +110,7 @@ public:
         return res;
     }
     Matrix <T> operator +(Matrix <T>& other) {
-        if (!(n == other.n && m == other.m)) {
-            throw WrongMatrixSize({n, m}, {other.n, other.m});
-        }
+        extended_assert((n == other.n && m == other.m), WrongMatrixSize);
 
         Matrix <T> res(n, m);
         for (int i = 0; i < n; i++) {
@@ -132,9 +121,7 @@ public:
         return res;
     }
     Matrix <T> operator -(Matrix <T>& other) {
-        if (!(n == other.n && m == other.m)) {
-            throw WrongMatrixSize({n, m}, {other.n, other.m});
-        }
+        extended_assert((n == other.n && m == other.m), WrongMatrixSize);
 
         Matrix <T> res(n, m);
         for (int i = 0; i < n; i++) {
@@ -155,9 +142,7 @@ public:
         return res;
     }
     T determinate() {
-        if (!(n == m)) {
-            throw NotSquareMatrix();
-        }
+        extended_assert(n != m, NotSquareMatrix);
 
     }
     //детерминант
@@ -184,10 +169,4 @@ ostream& operator<<(ostream& out, Matrix <T>& a) {
     return out;
 }
 
-int main() {
-    try {
-
-    }
-    catch (){
-    }
-}
+int main() {}
