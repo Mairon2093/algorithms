@@ -36,6 +36,8 @@ string to_string(pair <T, Y>& p) {
     return ("(" + to_string(p.first) + "; " + to_string(p.second) + ")");
 }
 
+const ld EPS = 1e-9;
+
 enum class Errors {
     WrongMatrixSize,
     DivisionByZero,
@@ -97,7 +99,7 @@ public:
     }
 
     Matrix <T> operator *(Matrix <T>& other) {
-        extended_assert((m != other.n), WrongMatrixSize);
+        extended_assert((m == other.n), WrongMatrixSize);
 
         Matrix <T> res(n, other.m);
         for (int row = 0; row < n; row++) {
@@ -141,15 +143,52 @@ public:
         }
         return res;
     }
-    T determinate() {
-        extended_assert(n != m, NotSquareMatrix);
 
+    //determinate matrix with Gauss method
+    T determinate() {
+        extended_assert((n == m), NotSquareMatrix);
+
+        vec <vec <T>> a = matr;
+
+        T det = 1;
+        for (int i = 0; i < n; i++) {
+            T k = 1;
+            for (int j = i + 1; j < n; j++) {
+                if (abs(a[i][j]) > abs(a[k][j])) {
+                    k = j;
+                }
+            }
+
+            if (abs(a[k][i]) < EPS) {
+                det = 0;
+                break;
+            }
+
+            swap(a[i], a[k]);
+            if (i != k) {
+                det = -det;
+            }
+            det *= a[i][i];
+
+            for (int j = i + 1; j < n; j++) {
+                a[i][j] = a[i][i];
+            }
+            for (int j = 0; j < n; j++) {
+                if (i != j && abs(a[j][i]) > EPS) {
+                    for (int k = i + 1; k < n; k++) {
+                        a[j][k] -= a[i][k] * a[j][i];
+                    }
+                }
+            }
+        }
+        return det;
     }
-    //детерминант
 };
 
+/*
 template <typename T>
 Matrix <T> pow(Matrix <T>& A, int degree) {}
+*/
 
 template <typename T>
 istream& operator>>(istream& in, Matrix <T>& a) {
