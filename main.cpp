@@ -36,18 +36,24 @@ string to_string(pair <T, Y>& p) {
     return ("(" + to_string(p.first) + "; " + to_string(p.second) + ")");
 }
 
-const ld EPS = 1e-9;
+const ld EPS = 1e-12;
+
+bool equal(ld a, ld b) {
+    return abs(a - b) < EPS;
+}
 
 enum class Errors {
     WrongMatrixSize,
     DivisionByZero,
-    NotSquareMatrix
+    NotSquareMatrix,
+    EmptyMatrixInitialization
 };
 /*
  messages:
 "wrong matrix's sizes"
 "division by zero"
 "matrix is not square, need square matrix"
+"try to initialize an empty matrix"
  */
 using enum Errors;
 
@@ -59,37 +65,38 @@ string convert_message_by_error(Errors error_state) {
             return "division by zero";
         case NotSquareMatrix:
             return "matrix is not square, need square matrix";
+        case EmptyMatrixInitialization:
+            return "try to initialize an empty matrix";
     }
     return "unknown error";
 }
 
 #define extended_assert(condition, error_type) { if (!condition) { std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ") ERROR: " << convert_message_by_error(error_type) << std::endl;}}
 
-template <typename T>
 class Matrix {
 public:
     int n, m; // cnt of rows, columns
-    vec <vec <T>> matr;
+    vec <vec <ld>> matr;
 
     template <typename Y>
     Matrix(vec <vec <Y>>& data) {
         // data.empty()
 
-        if (data.empty()) {}
+
 
         n = data.size();
         m = data.back().size(); // !!!
-        matr = data; // ??? vec <int> = vec <ll> cast
+        matr = data;
     }
     Matrix(int _n, int _m) {
         n = _n;
         m = _m;
-        matr = vec <vec <T>>(n, vec <T>(m));
+        matr = vec <vec <ld>>(n, vec <ld>(m));
     }
 
     template <typename Y>
-    Matrix <Y> operator *(Y val) {
-        Matrix <Y> res(n, m);
+    Matrix operator *(Y val) {
+        Matrix res(n, m);
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
                 res.matr[i][j] = val * matr[i][j];
@@ -98,10 +105,10 @@ public:
         return res;
     }
 
-    Matrix <T> operator *(Matrix <T>& other) {
+    Matrix operator *(Matrix & other) {
         extended_assert((m == other.n), WrongMatrixSize);
 
-        Matrix <T> res(n, other.m);
+        Matrix res(n, other.m);
         for (int row = 0; row < n; row++) {
             for (int column = 0; column < other.m; column++) {
                 for (int i = 0; i < m; i++) {
@@ -111,10 +118,10 @@ public:
         }
         return res;
     }
-    Matrix <T> operator +(Matrix <T>& other) {
+    Matrix operator +(Matrix& other) {
         extended_assert((n == other.n && m == other.m), WrongMatrixSize);
 
-        Matrix <T> res(n, m);
+        Matrix res(n, m);
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
                 res.matr[i][j] = matr[i][j] + other.matr[i][j];
@@ -122,10 +129,10 @@ public:
         }
         return res;
     }
-    Matrix <T> operator -(Matrix <T>& other) {
+    Matrix operator -(Matrix& other) {
         extended_assert((n == other.n && m == other.m), WrongMatrixSize);
 
-        Matrix <T> res(n, m);
+        Matrix res(n, m);
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
                 res.matr[i][j] = matr[i][j] - other.matr[i][j];
@@ -133,8 +140,8 @@ public:
         }
         return res;
     }
-    Matrix <T> transpose() {
-        Matrix <T> res(m, n);
+    Matrix transpose() {
+        Matrix res(m, n);
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
@@ -145,42 +152,46 @@ public:
     }
 
     //determinate matrix with Gauss method
-    T determinate() {
+    ld determinate() {
         extended_assert((n == m), NotSquareMatrix);
 
-        vec <vec <T>> a = matr;
+        vec <vec <ld>> a = matr;
+        ld det = 1;
 
-        T det = 1;
+        int swapCount = 0;
+
         for (int i = 0; i < n; i++) {
-            T k = 1;
-            for (int j = i + 1; j < n; j++) {
-                if (abs(a[i][j]) > abs(a[k][j])) {
-                    k = j;
+            // Выбор главного элемента
+            int maxRow = i;
+            for (int k = i + 1; k < n; k++) {
+                if (fabs(a[k][i]) > fabs(a[maxRow][i])) {
+                    maxRow = k;
                 }
             }
 
-            if (abs(a[k][i]) < EPS) {
-                det = 0;
-                break;
+            if (fabs(a[maxRow][i]) < 1e-12) {
+                return 0.0;
             }
 
-            swap(a[i], a[k]);
-            if (i != k) {
-                det = -det;
+            if (maxRow != i) {
+                swap(a[i], a[maxRow]);
+                swapCount++;
             }
+
+            for (int k = i + 1; k < n; k++) {
+                ld val = a[k][i] / a[i][i];
+                for (int j = i; j < n; j++) {
+                    a[k][j] -= val * a[i][j];
+                }
+            }
+
             det *= a[i][i];
-
-            for (int j = i + 1; j < n; j++) {
-                a[i][j] = a[i][i];
-            }
-            for (int j = 0; j < n; j++) {
-                if (i != j && abs(a[j][i]) > EPS) {
-                    for (int k = i + 1; k < n; k++) {
-                        a[j][k] -= a[i][k] * a[j][i];
-                    }
-                }
-            }
         }
+
+        if (swapCount % 2 == 1) {
+            det = -det;
+        }
+
         return det;
     }
 };
@@ -191,14 +202,14 @@ Matrix <T> pow(Matrix <T>& A, int degree) {}
 */
 
 template <typename T>
-istream& operator>>(istream& in, Matrix <T>& a) {
+istream& operator>>(istream& in, Matrix& a) {
     for (int i = 0; i < a.n; i++) {
         for (int j = 0; j < a.m; j++) in >> a.matr[i][j];
     }
     return in;
 }
 template <typename T>
-ostream& operator<<(ostream& out, Matrix <T>& a) {
+ostream& operator<<(ostream& out, Matrix& a) {
     for (int i = 0; i < a.n; i++) {
         for (int j = 0; j < a.m; j++) {
             out << a.matr[i][j] << " ";
@@ -208,4 +219,13 @@ ostream& operator<<(ostream& out, Matrix <T>& a) {
     return out;
 }
 
-int main() {}
+int main() {
+    cout << fixed << setprecision(5);
+
+    vec <vec <ld>> mtr = {
+        {1, 2},
+        {3, 4},
+    };
+    Matrix a(mtr);
+    cout << a.determinate();
+}
