@@ -80,12 +80,10 @@ public:
 
     template <typename Y>
     Matrix(vec <vec <Y>>& data) {
-        // data.empty()
-
-
+        extended_assert((!data.empty()), EmptyMatrixInitialization);
 
         n = data.size();
-        m = data.back().size(); // !!!
+        m = data.back().size();
         matr = data;
     }
     Matrix(int _n, int _m) {
