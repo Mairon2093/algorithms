@@ -1,0 +1,333 @@
+//#define _GLIBCXX_DEBUG
+//#define _GLIBCXX_DEBUG_PEDANTIC
+
+#include <bits/stdc++.h>
+
+using namespace std;
+
+using ll = long long;
+using ld = long double;
+using pii = pair <int, int>;
+template <typename T>
+using vec = vector <T>;
+
+template <typename T>
+istream& operator>>(istream& in, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) in >> a[i];
+    return in;
+}
+template <typename T>
+ostream& operator<<(ostream& out, vector <T>& a) {
+    for (int i = 0; i < a.size(); i++) out << a[i] << " ";
+    return out;
+}
+
+enum class Errors {
+    DivisionByZero,
+    WrongExpression,
+    NullPtrUsage,
+    ListIndexOutOfRange,
+    UnidentifiedOperator,
+    WrongTreeBuilding,
+    WantElementFromEmptyContainer,
+    ValueNotInMapKeys
+};
+
+/*
+ messages:
+"division by zero"
+"wrong expression"
+"try to use nullptr"
+"list index out of range"
+"what the fuck is that..."
+"the developers are idiots, wrong tree building"
+"want element from empty container"
+"value isn't in map keys"
+ */
+using enum Errors;
+
+string convert_message_by_error(Errors error_state) {
+    switch (error_state) {
+        case DivisionByZero:
+            return "division by zero";
+        case WrongExpression:
+            return "wrong expression";
+        case NullPtrUsage:
+            return "trying to use nullptr";
+        case ListIndexOutOfRange:
+            return "list index out of range";
+        case UnidentifiedOperator:
+            return "what the fuck is that (unidentified operator)...";
+        case WrongTreeBuilding:
+            return "the developers are idiots, wrong tree building";
+        case WantElementFromEmptyContainer:
+            return "want element from empty container";
+        case ValueNotInMapKeys:
+            return "value isn't in map keys";
+    }
+    return "unknown error";
+}
+
+#define extended_assert(condition, error_type) {\
+    if (!condition) { \
+        std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ") ERROR: " <<\
+            convert_message_by_error(error_type) << std::endl;\
+        exit(1);\
+    }\
+}
+
+vector <string> operators = {
+    "+",
+    "-",
+    "*",
+    "/"
+};
+
+map <string, int> operator_priorities = {
+    {"+", 3},
+    {"-", 3},
+    {"*", 2},
+    {"/", 2}
+};
+
+string getFullOperatorName(string operatorSign) {
+    if (operatorSign == "+") return "Plus";
+    if (operatorSign == "-") return "Minus";
+    if (operatorSign == "*") return "Multiplication";
+    if (operatorSign == "/") return "Division";
+    if (operatorSign == "constant") return "Constant";
+    extended_assert(false, UnidentifiedOperator);
+    return "unknownOperator";
+}
+
+bool isOperator(string s) {
+    for (string& item : operators) {
+        if (item == s) {
+            return true;
+        }
+    }
+    return false;
+}
+bool isNumber(string s) {
+    extended_assert((!s.empty()), WantElementFromEmptyContainer);
+    return ('0' <= s[0] && s[0] <= '9');
+}
+ld toLongDouble(string s) {
+    //res = a + b / 10 ** len
+    ld a = 0;
+
+    int it = 0;
+    while (it < s.size() && s[it] != '.') {
+        a = a * 10 + (int)(s[it] - '0');
+        it++;
+    }
+
+    it++;
+    ld b = 0;
+    int len = 0;
+    while (it < s.size()) {
+        b = b * 10 + (int)(s[it] - '0');
+        len++;
+        it++;
+    }
+    return a + b / pow((ld)10, len);
+}
+
+map <string, ld> constantValues = {
+
+};
+
+bool checkInKeys(string value, map <string, ld> mp) {
+    for (auto p : mp) {
+        if (p.first == value) return true;
+    }
+    return false;
+}
+
+void validate(vec <string> lexemes) {}
+
+vec <string> pre_parse(string expression) {
+    vec <string> lexemes;
+
+    validate(lexemes);
+    return lexemes;
+}
+
+class NameGenerator {
+private:
+    map <string, int> nameNumbers;
+
+public:
+    NameGenerator() {}
+    string generateName(string& nodeOperator) {
+        nameNumbers[nodeOperator]++;
+        return getFullOperatorName(nodeOperator) + "_" + to_string(nameNumbers[nodeOperator] - 1);
+    }
+};
+
+NameGenerator nameGenerator;
+
+class Node {
+public:
+    vec <string> lexemes;
+
+    //Node* parent = nullptr;
+    Node* childLeft = nullptr;
+    Node* childRight = nullptr;
+    string name;
+    string nodeOperator = "none";
+    string value;
+
+public:
+    Node(vec <string> _lexemes, Node* _parent, string _nodeOperator) {
+        lexemes = _lexemes;
+
+        //parent = _parent;
+        childLeft = nullptr;
+        childRight = nullptr;
+
+        nodeOperator = _nodeOperator;
+        name = nameGenerator.generateName(nodeOperator);
+    }
+    virtual ~Node() = default;
+    virtual ld calculate() {
+        return 0;
+    }
+};
+
+class Plus : public Node {
+public:
+    Plus() : Node({}, nullptr, "+") {}
+    ld calculate() override {
+        ld leftRes = childLeft->calculate();
+        ld rightRes = childRight->calculate();
+
+        return leftRes + rightRes;
+    }
+};
+
+class Minus : public Node {
+public:
+    Minus() : Node({}, nullptr, "-") {}
+    ld calculate() override {
+        ld leftRes = childLeft->calculate();
+        ld rightRes = childRight->calculate();
+
+        return leftRes - rightRes;
+    }
+};
+
+class Division : public Node {
+public:
+    Division() : Node({}, nullptr, "/") {}
+    ld calculate() override {
+        ld leftRes = childLeft->calculate();
+        ld rightRes = childRight->calculate();
+        extended_assert((rightRes != 0), DivisionByZero);
+
+        return leftRes / rightRes;
+    }
+};
+
+class Multiplication : public Node {
+public:
+    Multiplication() : Node({}, nullptr, "*") {}
+    ld calculate() override {
+        ld leftRes = childLeft->calculate();
+        ld rightRes = childRight->calculate();
+
+        return leftRes * rightRes;
+    }
+};
+
+class Constant : public Node {
+public:
+    Constant(string _value) : Node({}, nullptr, "constant") {
+        value = _value;
+    }
+    ld calculate() override {
+        if (!isNumber(value)) {
+            extended_assert(checkInKeys(value, constantValues), ValueNotInMapKeys);
+            return constantValues[value];
+        }
+        return toLongDouble(value);
+    }
+};
+
+void classChange(string lexeme, Node*& node) {
+    if (lexeme == "+") {
+        node = new Plus();
+    } else if (lexeme == "-") {
+        node = new Minus();
+    } else if (lexeme == "*") {
+        node = new Multiplication();
+    } else if (lexeme == "/") {
+        node = new Division();
+    } else if (lexeme == "constant") {
+        extended_assert(false, WrongTreeBuilding);
+    }
+}
+
+class ParseTree {
+private:
+    Node* root = nullptr;
+
+public:
+    int findBorder(vec <string> lexemes) {
+        int ind = -1;
+        for (int i = 0; i < lexemes.size(); i++) {
+            if (isOperator(lexemes[i])) {
+                if (ind == -1 || operator_priorities[lexemes[ind]] <= operator_priorities[lexemes[i]]) {
+                    ind = i;
+                }
+            }
+        }
+        return ind;
+    }
+
+    void buildTree(vec <string> lexemes, Node* node) {
+        extended_assert(!(lexemes.empty()), WrongTreeBuilding);
+
+        if (lexemes.size() == 1) {
+            extended_assert(isNumber(lexemes[0]), WrongTreeBuilding);
+            node = new Constant(lexemes[0]);
+            return;
+        }
+
+        extended_assert((node != nullptr), NullPtrUsage);
+        int border = findBorder(lexemes);
+        extended_assert((border != -1), ListIndexOutOfRange);
+        string borderOperator = lexemes[border]; //!!
+
+        // change node type to current border operator type
+        classChange(borderOperator, node);
+
+        // to children
+
+        vec <string> leftLexemes;
+        vec <string> rightLexemes;
+
+        for (int i = 0; i < border; i++) leftLexemes.push_back(lexemes[i]);
+        for (int i = border + 1; i < lexemes.size(); i++) rightLexemes.push_back(lexemes[i]);
+
+        node->childLeft = new Node({}, node, "");
+        node->childRight = new Node({}, node, "");
+
+        buildTree(leftLexemes, node->childLeft);
+        buildTree(rightLexemes, node->childRight);
+    }
+
+    ParseTree() {}
+    ParseTree(vec <string> lexemes) {
+        buildTree(lexemes, root);
+    }
+};
+
+int main() {
+    string expression;
+    cin >> expression;
+
+    vec <string> lexemes = pre_parse(expression);
+
+}
+
