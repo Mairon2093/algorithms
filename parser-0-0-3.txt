@@ -149,6 +149,7 @@ void validate(vec <string> lexemes) {}
 vec <string> pre_parse(string expression) {
     vec <string> lexemes;
 
+
     validate(lexemes);
     return lexemes;
 }
@@ -189,7 +190,10 @@ public:
         nodeOperator = _nodeOperator;
         name = nameGenerator.generateName(nodeOperator);
     }
-    virtual ~Node() = default;
+    virtual ~Node() {
+        delete childLeft;
+        delete childRight;
+    }
     virtual ld calculate() {
         return 0;
     }
@@ -321,12 +325,22 @@ public:
     ParseTree(vec <string> lexemes) {
         buildTree(lexemes, root);
     }
+
+    ld calculate() {
+        return root->calculate();
+    }
+
+    ~ParseTree() {
+        delete root;
+    }
 };
 
 int main() {
     string expression;
-    cin >> expression;
+    //cin >> expression;
+    getline(cin, expression);
 
     vec <string> lexemes = pre_parse(expression);
+
 
 }
